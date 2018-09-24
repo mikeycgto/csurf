@@ -58,6 +58,11 @@ function csurf (options) {
     ? ['GET', 'HEAD', 'OPTIONS']
     : opts.ignoreMethods
 
+  // ignored paths
+  var ignorePaths = opts.ignorePaths === undefined
+    ? []
+    : opts.ignorePaths;
+
   if (!Array.isArray(ignoreMethods)) {
     throw new TypeError('option ignoreMethods must be an array')
   }
@@ -108,6 +113,14 @@ function csurf (options) {
     }
 
     // verify the incoming token
+    for (var i = 0; i < ignorePaths.length; i++) {
+      if (req.path.startsWith(ignorePaths[i])) {
+        next();
+
+        return;
+      }
+    }
+
     if (!ignoreMethod[req.method] && !tokens.verify(secret, value(req))) {
       return next(createError(403, 'invalid csrf token', {
         code: 'EBADCSRFTOKEN'
