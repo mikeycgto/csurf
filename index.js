@@ -63,6 +63,11 @@ function csurf (options) {
     ? []
     : opts.ignorePaths;
 
+  // ignored headers
+  var ignoreHeaders = opts.ignoreHeaders === undefined
+    ? []
+    : opts.ignoreHeaders;
+
   if (!Array.isArray(ignoreMethods)) {
     throw new TypeError('option ignoreMethods must be an array')
   }
@@ -112,7 +117,6 @@ function csurf (options) {
       setSecret(req, res, sessionKey, secret, cookie)
     }
 
-    // verify the incoming token
     for (var i = 0; i < ignorePaths.length; i++) {
       if (req.path.startsWith(ignorePaths[i])) {
         next();
@@ -121,6 +125,15 @@ function csurf (options) {
       }
     }
 
+    for (var i = 0; i < ignoreHeaders.length; i++) {
+      if (req.headers[ignoreHeaders[i]] !== undefined) {
+        next();
+
+        return
+      }
+    }
+
+    // verify the incoming token
     if (!ignoreMethod[req.method] && !tokens.verify(secret, value(req))) {
       return next(createError(403, 'invalid csrf token', {
         code: 'EBADCSRFTOKEN'
